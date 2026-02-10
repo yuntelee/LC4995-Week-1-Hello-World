@@ -109,7 +109,18 @@ export default async function DataListPage() {
   let errorMessage: string | null = null;
 
   try {
-    const supabase = await createClient();
+    console.log("Starting DataListPage render...");
+    
+    let supabase;
+    try {
+      console.log("Creating Supabase client...");
+      supabase = await createClient();
+      console.log("Supabase client created successfully");
+    } catch (clientErr) {
+      console.error("Failed to create Supabase client:", clientErr);
+      throw new Error(`Supabase client init failed: ${clientErr instanceof Error ? clientErr.message : String(clientErr)}`);
+    }
+
     // Prioritize the images table with url column
     const tablesToTry = [
       "images",
@@ -123,22 +134,28 @@ export default async function DataListPage() {
       "humor_flavors",
     ];
 
+    console.log("Starting table fetch attempts...");
+
     // Try each table in sequence until we find one with data
     for (const table of tablesToTry) {
       try {
+        console.log(`Attempting to fetch from table: ${table}`);
         const tableResult = await fetchTableData(supabase, table);
         if (tableResult) {
+          console.log(`Successfully fetched from table: ${table}`);
           result = tableResult;
           break;
         }
       } catch (tableErr) {
-        console.warn(`Error fetching table ${table}:`, tableErr);
+        console.warn(`Error fetching table ${table}:`, tableErr instanceof Error ? tableErr.message : String(tableErr));
         continue;
       }
     }
+
+    console.log("Table fetch attempts completed");
   } catch (err) {
-    console.error("Failed to initialize Supabase:", err);
-    errorMessage = "Failed to connect to database. Check environment variables.";
+    console.error("Critical error in DataListPage:", err);
+    errorMessage = err instanceof Error ? err.message : String(err);
   }
 
   return (
@@ -154,30 +171,26 @@ export default async function DataListPage() {
 
         {errorMessage && (
           <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg mb-6">
-            <h2 className="text-lg font-semibold mb-2">Database Error</h2>
+            <h2 className="text-lg font-semibold mb-2">Error</h2>
             <p className="text-sm">{errorMessage}</p>
           </div>
         )}
 
-        {!result ? (
-          <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg mb-6">
+        {!result && !errorMessage && (
+          <div className="bg-yellow-900 border border-yellow-700 text-yellow-200 p-4 rounded-lg mb-6">
             <h2 className="text-lg font-semibold mb-2">No Data Found</h2>
             <p className="text-sm mb-4">
-              Could not find any data in the available tables (checked captions, profiles, llm_model_responses, humor_flavor_steps, llm_prompt_chains, sidechat_posts, caption_requests, images, humor_flavors)
+              Could not find any data in the available tables. This might mean:
             </p>
-            <p className="text-sm text-red-100">
-              <strong>Possible causes:</strong>
-            </p>
-            <ul className="text-sm text-red-100 list-disc ml-5 mt-2">
-              <li>Tables don't exist or are empty</li>
-              <li>Row Level Security (RLS) is enabled without SELECT policies</li>
-              <li>Service role key needed (currently using anon key)</li>
+            <ul className="text-sm text-yellow-100 list-disc ml-5 mt-2">
+              <li>Tables are empty</li>
+              <li>Row Level Security (RLS) is blocking access</li>
+              <li>Check Vercel logs for detailed error information</li>
             </ul>
-            <p className="text-sm text-red-100 mt-4">
-              <strong>Next step:</strong> Create a table and add test data, or check RLS policies in Supabase dashboard.
-            </p>
           </div>
-        ) : (
+        )}
+
+        {result && (
           <>
             <h1 className="text-4xl font-bold text-white mb-2 capitalize">
               {result.tableName} Data
