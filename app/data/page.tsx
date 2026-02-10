@@ -53,7 +53,16 @@ function isImageColumn(columnName: string, tableName?: string): boolean {
 
 async function fetchTableData(supabase: any, tableName: string): Promise<TableResult | null> {
   try {
-    const { data, error } = await supabase.from(tableName).select("*").limit(100);
+    // For images table, exclude the embedding column (pgvector type that can't be serialized)
+    let query = supabase.from(tableName).select("*");
+
+    if (tableName === "images") {
+      query = supabase
+        .from(tableName)
+        .select("id, created_datetime_utc, modified_datetime_utc, url, is_common_use, profile_id, additional_context, is_public, image_description, celebrity_recognition");
+    }
+
+    const { data, error } = await query.limit(100);
 
     if (error) {
       console.log(`Table ${tableName}: error:`, error.message);
