@@ -71,16 +71,23 @@ async function fetchTableData(supabase: any, tableName: string): Promise<TableRe
       return null;
     }
 
-    const columns = Object.keys(firstRow).filter((key) => key && typeof key === "string");
-    console.log(`Table ${tableName}: success - ${data.length} rows`);
+    const columns = Object.keys(firstRow)
+      .filter((key) => key && typeof key === "string")
+      .slice(0, 20); // Limit to first 20 columns to avoid performance issues
 
+    console.log(`Table ${tableName}: success - ${data.length} rows, ${columns.length} columns`);
+
+    // Truncate data to first 50 rows to avoid performance issues
     return {
       tableName,
-      data,
+      data: data.slice(0, 50),
       columns,
     };
   } catch (err) {
-    console.error(`Table ${tableName}: exception:`, err instanceof Error ? err.message : String(err));
+    console.error(
+      `Table ${tableName}: exception:`,
+      err instanceof Error ? err.message : String(err)
+    );
     return null;
   }
 }
@@ -200,9 +207,15 @@ export default async function DataListPage() {
                           ) : (
                             <div className="bg-slate-900 p-2 rounded border border-slate-700 max-h-40 overflow-auto">
                               <p className="text-white text-xs font-mono break-words">
-                                {typeof value === "string" || typeof value === "number"
-                                  ? String(value)
-                                  : JSON.stringify(value, null, 2)}
+                                {typeof value === "string"
+                                  ? String(value).substring(0, 500)
+                                  : typeof value === "number"
+                                    ? String(value)
+                                    : value === null
+                                      ? "null"
+                                      : value === undefined
+                                        ? "undefined"
+                                        : "[Object]"}
                               </p>
                             </div>
                           )}
@@ -219,7 +232,13 @@ export default async function DataListPage() {
               <div className="mt-8 p-4 bg-slate-800 border border-slate-700 rounded-lg">
                 <p className="text-gray-300 text-sm font-semibold mb-2">Debug: First Row Raw JSON</p>
                 <pre className="bg-slate-900 p-3 rounded text-xs overflow-auto text-gray-200 max-h-60">
-                  {JSON.stringify(result.data[0], null, 2)}
+                  {(() => {
+                    try {
+                      return JSON.stringify(result.data[0], null, 2).substring(0, 5000);
+                    } catch {
+                      return "[Unable to serialize data]";
+                    }
+                  })()}
                 </pre>
               </div>
             )}
