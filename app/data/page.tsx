@@ -74,12 +74,13 @@ export default async function DataPage() {
     console.log("Fetching captions with images...");
     const { data: captions, error } = await supabase
       .from("captions")
-      .select("id, content, like_count, created_datetime_utc, image_id, images(id, url)")
+      .select("id, content, like_count, created_datetime_utc, image_id, images!inner(id, url)")
       .order("like_count", { ascending: false })
       .limit(50);
 
     console.log("Fetch complete. Error:", error);
     console.log("Captions fetched:", captions?.length);
+    console.log("First caption:", JSON.stringify(captions?.[0], null, 2));
 
     if (error) {
       console.error("Supabase error:", error);
@@ -141,6 +142,14 @@ export default async function DataPage() {
             {captions.map((caption: Caption) => (
               <CaptionCard key={caption.id} caption={caption} />
             ))}
+          </div>
+
+          {/* Debug Section */}
+          <div className="mt-12 pt-8 border-t border-slate-700">
+            <h2 className="text-sm font-mono text-slate-400 mb-4">Debug: Raw Data</h2>
+            <pre className="bg-slate-900 p-4 rounded text-xs text-slate-300 overflow-x-auto">
+              {JSON.stringify(captions.slice(0, 2), null, 2)}
+            </pre>
           </div>
         </div>
       </main>
