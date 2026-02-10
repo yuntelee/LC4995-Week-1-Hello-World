@@ -15,11 +15,11 @@ interface Caption {
   like_count: number;
   created_datetime_utc: string;
   image_id: string;
-  images: Image[];
+  imageUrl?: string;
 }
 
 async function CaptionCard({ caption }: { caption: Caption }) {
-  const imageUrl = caption.images?.[0]?.url;
+  const imageUrl = caption.imageUrl;
   const formattedDate = new Date(caption.created_datetime_utc).toLocaleDateString();
 
   return (
@@ -70,35 +70,20 @@ export default async function DataPage() {
     const supabase = await createClient();
     console.log("Supabase client created successfully");
 
-    // Fetch captions with their related images using foreign key expansion
-    console.log("Fetching captions with images...");
-    const { data: captions, error } = await supabase
+    // Fetch captions
+    console.log("Fetching captions...");
+    const { data: captions, error: captionsError } = await supabase
       .from("captions")
-      .select("id, content, like_count, created_datetime_utc, image_id, images!inner(id, url)")
+      .select("id, content, like_count, created_datetime_utc, image_id")
       .order("like_count", { ascending: false })
       .limit(50);
 
-    console.log("Fetch complete. Error:", error);
+    console.log("Captions fetch complete. Error:", captionsError);
     console.log("Captions fetched:", captions?.length);
-    console.log("First caption:", JSON.stringify(captions?.[0], null, 2));
 
-    if (error) {
-      console.error("Supabase error:", error);
-      return (
-        <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
-          <div className="max-w-6xl mx-auto">
-            <Link href="/">
-              <button className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition mb-6">
-                ← Back to Home
-              </button>
-            </Link>
-            <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg">
-              <p className="font-semibold">Error fetching captions:</p>
-              <p className="text-sm mt-1">{error.message}</p>
-            </div>
-          </div>
-        </main>
-      );
+    if (captionsError) {
+      console.error("Supabase error fetching captions:", captionsError);
+      throw captionsError;
     }
 
     if (!captions || captions.length === 0) {
@@ -117,6 +102,39 @@ export default async function DataPage() {
         </main>
       );
     }
+
+    // Fetch all images
+    console.log("Fetching images...");
+    const { data: images, error: imagesError } = await supabase
+      .from("images")
+      .select("id, url");
+
+    console.log("Images fetch complete. Error:", imagesError);
+    console.log("Images fetched:", images?.length);
+
+    if (imagesError) {
+      console.error("Supabase error fetching images:", imagesError);
+    }
+
+    // Create image lookup map
+    const imageMap = new Map<string, string>();
+    if (images && Array.isArray(images)) {
+      images.forEach((img) => {
+        if (img.id && img.url) {
+          imageMap.set(img.id, img.url);
+        }
+      });
+    }
+
+    console.log("Image map size:", imageMap.size);
+
+    // Merge captions with image URLs
+    const captionsWithImages = captions.map((caption) => ({
+      ...caption,
+      imageUrl: imageMap.get(caption.image_id),
+    }));
+
+    console.log("First caption with image:", JSON.stringify(captionsWithImages[0], null, 2));
 
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -139,7 +157,7 @@ export default async function DataPage() {
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {captions.map((caption: Caption) => (
+            {captionsWithImages.map((caption: Caption) => (
               <CaptionCard key={caption.id} caption={caption} />
             ))}
           </div>
@@ -148,7 +166,7 @@ export default async function DataPage() {
           <div className="mt-12 pt-8 border-t border-slate-700">
             <h2 className="text-sm font-mono text-slate-400 mb-4">Debug: Raw Data</h2>
             <pre className="bg-slate-900 p-4 rounded text-xs text-slate-300 overflow-x-auto">
-              {JSON.stringify(captions.slice(0, 2), null, 2)}
+              {JSON.stringify(captionsWithImages.slice(0, 2), null, 2)}
             </pre>
           </div>
         </div>
