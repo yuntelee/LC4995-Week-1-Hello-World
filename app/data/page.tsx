@@ -20,7 +20,9 @@ function isImageUrl(value: any): boolean {
     imageExtensions.some((ext) => lowerValue.includes(ext)) ||
     lowerValue.includes("supabase") ||
     lowerValue.includes("cdn") ||
-    lowerValue.includes("storage")
+    lowerValue.includes("storage") ||
+    lowerValue.includes("http://") ||
+    lowerValue.includes("https://")
   );
 }
 
@@ -35,6 +37,10 @@ function isImageColumn(columnName: string): boolean {
     "thumbnail",
     "avatar",
     "icon",
+    "logo",
+    "image_url",
+    "photo_url",
+    "picture_url",
   ];
   return imageKeywords.some((keyword) =>
     columnName.toLowerCase().includes(keyword)
@@ -153,8 +159,11 @@ export default async function DataListPage() {
             <h1 className="text-4xl font-bold text-white mb-2 capitalize">
               {result.tableName} Data
             </h1>
-            <p className="text-gray-300 mb-8">
+            <p className="text-gray-300 mb-2">
               Showing {result.data.length} records from the {result.tableName} table
+            </p>
+            <p className="text-gray-400 text-sm mb-8">
+              Columns: {result.columns.join(", ")}
             </p>
 
             <div className="grid grid-cols-1 gap-4">
@@ -169,24 +178,29 @@ export default async function DataListPage() {
                       const isImage = isImageUrl(value) || isImageColumn(column);
 
                       return (
-                        <div key={column}>
+                        <div key={column} className="break-all">
                           <p className="text-gray-400 text-sm capitalize font-semibold mb-2">
                             {column}
                           </p>
                           {isImage && value ? (
-                            <div className="relative w-full h-40 bg-slate-900 rounded border border-slate-600 overflow-hidden">
+                            <div className="relative w-full h-40 bg-slate-900 rounded border border-slate-600 overflow-hidden flex items-center justify-center">
                               <img
                                 src={value}
                                 alt={`${column} from ${result.tableName}`}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.warn(`Failed to load image from ${value}`);
+                                }}
                               />
                             </div>
                           ) : (
-                            <p className="text-white break-words max-h-40 overflow-auto">
-                              {typeof value === "string" || typeof value === "number"
-                                ? String(value)
-                                : JSON.stringify(value)}
-                            </p>
+                            <div className="bg-slate-900 p-2 rounded border border-slate-700 max-h-40 overflow-auto">
+                              <p className="text-white text-xs font-mono break-words">
+                                {typeof value === "string" || typeof value === "number"
+                                  ? String(value)
+                                  : JSON.stringify(value, null, 2)}
+                              </p>
+                            </div>
                           )}
                         </div>
                       );
@@ -195,6 +209,16 @@ export default async function DataListPage() {
                 </div>
               ))}
             </div>
+
+            {/* Debug: Show first row raw JSON */}
+            {result.data.length > 0 && (
+              <div className="mt-8 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                <p className="text-gray-300 text-sm font-semibold mb-2">Debug: First Row Raw JSON</p>
+                <pre className="bg-slate-900 p-3 rounded text-xs overflow-auto text-gray-200 max-h-60">
+                  {JSON.stringify(result.data[0], null, 2)}
+                </pre>
+              </div>
+            )}
           </>
         )}
       </div>
