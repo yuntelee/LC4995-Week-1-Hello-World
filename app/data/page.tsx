@@ -64,7 +64,7 @@ export default async function DataPage() {
       like_count,
       created_datetime_utc,
       image_id,
-      image:images(url)
+      image:images!captions_image_id_fkey(url)
     `
     )
     .order("like_count", { ascending: false })
