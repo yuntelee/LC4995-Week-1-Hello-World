@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 
 interface DataItem {
   [key: string]: any;
@@ -9,6 +10,36 @@ interface TableResult {
   tableName: string;
   data: DataItem[];
   columns: string[];
+}
+
+// Helper to detect if a value is an image URL
+function isImageUrl(value: any): boolean {
+  if (!value || typeof value !== "string") return false;
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
+  const lowerValue = value.toLowerCase();
+  return (
+    imageExtensions.some((ext) => lowerValue.includes(ext)) ||
+    lowerValue.includes("supabase") ||
+    lowerValue.includes("cdn") ||
+    lowerValue.includes("storage")
+  );
+}
+
+// Helper to detect if column name suggests image content
+function isImageColumn(columnName: string): boolean {
+  const imageKeywords = [
+    "image",
+    "photo",
+    "picture",
+    "url",
+    "src",
+    "thumbnail",
+    "avatar",
+    "icon",
+  ];
+  return imageKeywords.some((keyword) =>
+    columnName.toLowerCase().includes(keyword)
+  );
 }
 
 async function fetchTableData(supabase: any, tableName: string): Promise<TableResult | null> {
@@ -110,14 +141,36 @@ export default async function DataListPage() {
                   className="bg-slate-800 border border-purple-500 rounded-lg p-6 hover:border-purple-400 transition"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {result.columns.map((column) => (
-                      <div key={column}>
-                        <p className="text-gray-400 text-sm capitalize font-semibold">{column}</p>
-                        <p className="text-white break-words">
-                          {String(item[column] ?? "—")}
-                        </p>
-                      </div>
-                    ))}
+                    {result.columns.map((column) => {
+                      const value = item[column];
+                      const isImage = isImageUrl(value) || isImageColumn(column);
+
+                      return (
+                        <div key={column}>
+                          <p className="text-gray-400 text-sm capitalize font-semibold mb-2">
+                            {column}
+                          </p>
+                          {isImage && value ? (
+                            <div className="relative w-full h-40 bg-slate-900 rounded border border-slate-600 overflow-hidden">
+                              <Image
+                                src={value}
+                                alt={`${column} from ${result.tableName}`}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                onError={() => {
+                                  // Fallback if image fails to load
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <p className="text-white break-words">
+                              {String(value ?? "—")}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
