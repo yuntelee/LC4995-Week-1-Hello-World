@@ -1,6 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import Image from "next/image";
 
 interface DataItem {
   [key: string]: any;
@@ -152,20 +151,17 @@ export default async function DataListPage() {
                           </p>
                           {isImage && value ? (
                             <div className="relative w-full h-40 bg-slate-900 rounded border border-slate-600 overflow-hidden">
-                              <Image
+                              <img
                                 src={value}
                                 alt={`${column} from ${result.tableName}`}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                onError={() => {
-                                  // Fallback if image fails to load
-                                }}
+                                className="w-full h-full object-cover"
                               />
                             </div>
                           ) : (
-                            <p className="text-white break-words">
-                              {String(value ?? "—")}
+                            <p className="text-white break-words max-h-40 overflow-auto">
+                              {typeof value === "string" || typeof value === "number"
+                                ? String(value)
+                                : JSON.stringify(value)}
                             </p>
                           )}
                         </div>
