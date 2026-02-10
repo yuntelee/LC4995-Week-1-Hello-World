@@ -27,22 +27,33 @@ export default function DataList() {
       setError(null);
 
       // Try to fetch from common table names
-      const tablesToTry = ["posts", "users", "products", "items", "tasks", "notes"];
+      const tablesToTry = ["posts", "users", "products", "items", "tasks", "notes", "messages", "comments", "articles", "events"];
       let data = null;
       let tableName = "";
       let columns: string[] = [];
+      let foundTables: string[] = [];
 
       for (const table of tablesToTry) {
         const { data: result, error: err } = await supabase
           .from(table)
           .select("*")
-          .limit(100);
+          .limit(1);
 
-        if (!err && result && result.length > 0) {
-          data = result;
-          tableName = table;
-          columns = Object.keys(result[0]);
-          break;
+        if (!err && result) {
+          foundTables.push(table);
+          // Get the first non-empty table
+          if (!data && result.length > 0) {
+            const { data: fullData, error: fullErr } = await supabase
+              .from(table)
+              .select("*")
+              .limit(100);
+            
+            if (!fullErr && fullData && fullData.length > 0) {
+              data = fullData;
+              tableName = table;
+              columns = Object.keys(fullData[0]);
+            }
+          }
         }
       }
 
@@ -50,7 +61,10 @@ export default function DataList() {
         setItems(data);
         setTableInfo({ name: tableName, columns });
       } else {
-        setError("No data found in available tables");
+        const tableList = foundTables.length > 0 
+          ? `Tables found (empty or no access): ${foundTables.join(", ")}`
+          : "No tables found. Please check your Supabase project.";
+        setError(`No data found in available tables. ${tableList}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data");
