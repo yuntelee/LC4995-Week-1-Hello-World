@@ -1,25 +1,19 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 
-// Force dynamic rendering because we use cookies() for Supabase auth
 export const dynamic = "force-dynamic";
-
-interface Image {
-  id: string;
-  url: string;
-}
 
 interface Caption {
   id: string;
-  content: string;
+  content: string | null;
   like_count: number;
   created_datetime_utc: string;
-  image_id: string;
-  imageUrl?: string;
+  image_id: string | null;
+  image: { url: string | null } | null; // from images table
 }
 
-async function CaptionCard({ caption }: { caption: Caption }) {
-  const imageUrl = caption.imageUrl;
+function CaptionCard({ caption }: { caption: Caption }) {
+  const imageUrl = caption.image?.url ?? null;
   const formattedDate = new Date(caption.created_datetime_utc).toLocaleDateString();
 
   return (
@@ -31,10 +25,6 @@ async function CaptionCard({ caption }: { caption: Caption }) {
             src={imageUrl}
             alt={caption.content || "Caption image"}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-            }}
           />
         </div>
       ) : (
@@ -45,12 +35,10 @@ async function CaptionCard({ caption }: { caption: Caption }) {
 
       {/* Caption Content Section */}
       <div className="p-4">
-        {/* Caption Text */}
         <p className="text-white text-lg font-semibold mb-3 line-clamp-3">
           {caption.content || "No caption"}
         </p>
 
-        {/* Footer Info */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-400">{formattedDate}</span>
           <div className="flex items-center gap-1 bg-purple-900/30 px-3 py-1 rounded-full">
@@ -64,27 +52,28 @@ async function CaptionCard({ caption }: { caption: Caption }) {
 }
 
 export default async function DataPage() {
-  console.log("Starting DataPage render...");
-
   try {
     const supabase = await createClient();
-    console.log("Supabase client created successfully");
 
-    // Fetch captions
-    console.log("Fetching captions...");
+    // Fetch captions + related image url (needs captions.image_id -> images.id FK)
     const { data: captions, error: captionsError } = await supabase
-      .from("captions")
-      .select("id, content, like_count, created_datetime_utc, image_id")
+      .from("captions") // change to "caption" if your table is singular
+      .select(
+        `
+        id,
+        content,
+        like_count,
+        created_datetime_utc,
+        image_id,
+        image:images (
+          url
+        )
+      `
+      )
       .order("like_count", { ascending: false })
       .limit(50);
 
-    console.log("Captions fetch complete. Error:", captionsError);
-    console.log("Captions fetched:", captions?.length);
-
-    if (captionsError) {
-      console.error("Supabase error fetching captions:", captionsError);
-      throw captionsError;
-    }
+    if (captionsError) throw captionsError;
 
     if (!captions || captions.length === 0) {
       return (
@@ -103,49 +92,14 @@ export default async function DataPage() {
       );
     }
 
-    // Fetch all images
-    console.log("Fetching images...");
-    const { data: images, error: imagesError } = await supabase
-      .from("images")
-      .select("id, url");
-
-    console.log("Images fetch complete. Error:", imagesError);
-    console.log("Images fetched:", images?.length);
-
-    if (imagesError) {
-      console.error("Supabase error fetching images:", imagesError);
-    }
-
-    // Create image lookup map
-    const imageMap = new Map<string, string>();
-    if (images && Array.isArray(images)) {
-      images.forEach((img) => {
-        if (img.id && img.url) {
-          imageMap.set(img.id, img.url);
-        }
-      });
-    }
-
-    console.log("Image map size:", imageMap.size);
-
-    // Merge captions with image URLs
-    const captionsWithImages = captions.map((caption) => ({
-      ...caption,
-      imageUrl: imageMap.get(caption.image_id),
-    }));
-
-    console.log("First caption with image:", JSON.stringify(captionsWithImages[0], null, 2));
-
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Captions & Images</h1>
               <p className="text-slate-300">
-                Showing {captions.length} caption{captions.length !== 1 ? "s" : ""} with
-                images
+                Showing {captions.length} caption{captions.length !== 1 ? "s" : ""} with images
               </p>
             </div>
             <Link href="/">
@@ -155,25 +109,22 @@ export default async function DataPage() {
             </Link>
           </div>
 
-          {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {captionsWithImages.map((caption: Caption) => (
+            {captions.map((caption) => (
               <CaptionCard key={caption.id} caption={caption} />
             ))}
           </div>
 
-          {/* Debug Section */}
           <div className="mt-12 pt-8 border-t border-slate-700">
             <h2 className="text-sm font-mono text-slate-400 mb-4">Debug: Raw Data</h2>
             <pre className="bg-slate-900 p-4 rounded text-xs text-slate-300 overflow-x-auto">
-              {JSON.stringify(captionsWithImages.slice(0, 2), null, 2)}
+              {JSON.stringify(captions.slice(0, 2), null, 2)}
             </pre>
           </div>
         </div>
       </main>
     );
   } catch (err) {
-    console.error("Exception in DataPage:", err instanceof Error ? err.message : String(err));
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
         <div className="max-w-6xl mx-auto">
@@ -184,9 +135,7 @@ export default async function DataPage() {
           </Link>
           <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg">
             <p className="font-semibold">Error rendering page:</p>
-            <p className="text-sm mt-1">
-              {err instanceof Error ? err.message : String(err)}
-            </p>
+            <p className="text-sm mt-1">{err instanceof Error ? err.message : String(err)}</p>
           </div>
         </div>
       </main>
