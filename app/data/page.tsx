@@ -15,11 +15,11 @@ interface Caption {
   like_count: number;
   created_datetime_utc: string;
   image_id: string;
-  images: Image | null;
+  images: Image[];
 }
 
 async function CaptionCard({ caption }: { caption: Caption }) {
-  const imageUrl = caption.images?.url;
+  const imageUrl = caption.images?.[0]?.url;
   const formattedDate = new Date(caption.created_datetime_utc).toLocaleDateString();
 
   return (
