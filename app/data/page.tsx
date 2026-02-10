@@ -46,16 +46,22 @@ async function fetchTableData(supabase: any, tableName: string): Promise<TableRe
     const { data, error } = await supabase.from(tableName).select("*").limit(100);
 
     if (error) {
-      console.log(`Table ${tableName}: error:`, error);
+      console.log(`Table ${tableName}: error:`, error.message);
       return null;
     }
 
-    if (!data || data.length === 0) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
       console.log(`Table ${tableName}: no data (possible RLS)`);
       return null;
     }
 
-    const columns = Object.keys(data[0]);
+    const firstRow = data[0];
+    if (!firstRow || typeof firstRow !== "object") {
+      console.log(`Table ${tableName}: invalid data format`);
+      return null;
+    }
+
+    const columns = Object.keys(firstRow).filter((key) => key && typeof key === "string");
     console.log(`Table ${tableName}: success - ${data.length} rows`);
 
     return {
@@ -64,35 +70,46 @@ async function fetchTableData(supabase: any, tableName: string): Promise<TableRe
       columns,
     };
   } catch (err) {
-    console.error(`Table ${tableName}: exception:`, err);
+    console.error(`Table ${tableName}: exception:`, err instanceof Error ? err.message : String(err));
     return null;
   }
 }
 
 export default async function DataListPage() {
-  const supabase = await createClient();
-  // Prioritize tables with actual data from your Supabase database
-  const tablesToTry = [
-    "captions",
-    "profiles", 
-    "llm_model_responses",
-    "humor_flavor_steps",
-    "llm_prompt_chains",
-    "sidechat_posts",
-    "caption_requests",
-    "images",
-    "humor_flavors",
-  ];
-
   let result: TableResult | null = null;
+  let errorMessage: string | null = null;
 
-  // Try each table in sequence until we find one with data
-  for (const table of tablesToTry) {
-    const tableResult = await fetchTableData(supabase, table);
-    if (tableResult) {
-      result = tableResult;
-      break;
+  try {
+    const supabase = await createClient();
+    // Prioritize tables with actual data from your Supabase database
+    const tablesToTry = [
+      "captions",
+      "profiles", 
+      "llm_model_responses",
+      "humor_flavor_steps",
+      "llm_prompt_chains",
+      "sidechat_posts",
+      "caption_requests",
+      "images",
+      "humor_flavors",
+    ];
+
+    // Try each table in sequence until we find one with data
+    for (const table of tablesToTry) {
+      try {
+        const tableResult = await fetchTableData(supabase, table);
+        if (tableResult) {
+          result = tableResult;
+          break;
+        }
+      } catch (tableErr) {
+        console.warn(`Error fetching table ${table}:`, tableErr);
+        continue;
+      }
     }
+  } catch (err) {
+    console.error("Failed to initialize Supabase:", err);
+    errorMessage = "Failed to connect to database. Check environment variables.";
   }
 
   return (
@@ -105,6 +122,13 @@ export default async function DataListPage() {
             </button>
           </Link>
         </div>
+
+        {errorMessage && (
+          <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg mb-6">
+            <h2 className="text-lg font-semibold mb-2">Database Error</h2>
+            <p className="text-sm">{errorMessage}</p>
+          </div>
+        )}
 
         {!result ? (
           <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg mb-6">
