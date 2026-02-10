@@ -1,6 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 
+// Force dynamic rendering because we use cookies() for Supabase auth
+export const dynamic = "force-dynamic";
+
 interface DataItem {
   [key: string]: any;
 }
