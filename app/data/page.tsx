@@ -41,7 +41,18 @@ async function fetchTableData(supabase: any, tableName: string): Promise<TableRe
 
 export default async function DataListPage() {
   const supabase = await createClient();
-  const tablesToTry = ["posts", "users", "products", "items", "tasks", "notes"];
+  // Prioritize tables with actual data from your Supabase database
+  const tablesToTry = [
+    "captions",
+    "profiles", 
+    "llm_model_responses",
+    "humor_flavor_steps",
+    "llm_prompt_chains",
+    "sidechat_posts",
+    "caption_requests",
+    "images",
+    "humor_flavors",
+  ];
 
   let result: TableResult | null = null;
 
@@ -69,7 +80,7 @@ export default async function DataListPage() {
           <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg mb-6">
             <h2 className="text-lg font-semibold mb-2">No Data Found</h2>
             <p className="text-sm mb-4">
-              Could not find any data in the available tables: {tablesToTry.join(", ")}
+              Could not find any data in the available tables (checked captions, profiles, llm_model_responses, humor_flavor_steps, llm_prompt_chains, sidechat_posts, caption_requests, images, humor_flavors)
             </p>
             <p className="text-sm text-red-100">
               <strong>Possible causes:</strong>
