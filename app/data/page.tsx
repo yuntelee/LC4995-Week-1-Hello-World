@@ -27,7 +27,7 @@ function isImageUrl(value: any): boolean {
 }
 
 // Helper to detect if column name suggests image content
-function isImageColumn(columnName: string): boolean {
+function isImageColumn(columnName: string, tableName?: string): boolean {
   const imageKeywords = [
     "image",
     "photo",
@@ -42,6 +42,10 @@ function isImageColumn(columnName: string): boolean {
     "photo_url",
     "picture_url",
   ];
+  // For images table, always treat 'url' column as image
+  if (tableName === "images" && columnName === "url") {
+    return true;
+  }
   return imageKeywords.some((keyword) =>
     columnName.toLowerCase().includes(keyword)
   );
@@ -87,8 +91,9 @@ export default async function DataListPage() {
 
   try {
     const supabase = await createClient();
-    // Prioritize tables with actual data from your Supabase database
+    // Prioritize the images table with url column
     const tablesToTry = [
+      "images",
       "captions",
       "profiles", 
       "llm_model_responses",
@@ -96,7 +101,6 @@ export default async function DataListPage() {
       "llm_prompt_chains",
       "sidechat_posts",
       "caption_requests",
-      "images",
       "humor_flavors",
     ];
 
@@ -175,7 +179,7 @@ export default async function DataListPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {result.columns.map((column) => {
                       const value = item[column];
-                      const isImage = isImageUrl(value) || isImageColumn(column);
+                      const isImage = isImageUrl(value) || isImageColumn(column, result.tableName);
 
                       return (
                         <div key={column} className="break-all">
