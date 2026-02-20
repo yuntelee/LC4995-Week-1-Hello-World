@@ -1,3 +1,5 @@
+import SignInButton from "@/app/components/SignInButton";
+
 export default function Home() {
   const characters = "HELLO WORLD".split("");
 
@@ -96,11 +98,12 @@ export default function Home() {
           </div>
 
           <div className="mt-12 flex gap-4 justify-center">
+            <SignInButton />
             <a
-              href="/data"
+              href="/gated"
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105"
             >
-              View Data
+              Gated Page
             </a>
             <a
               href="https://nextjs.org"
