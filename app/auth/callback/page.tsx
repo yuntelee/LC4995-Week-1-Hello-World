@@ -26,8 +26,8 @@ export default function AuthCallback() {
           return;
         }
 
-        // Successful sign-in, send user to gated page
-        router.replace("/gated");
+        // Successful sign-in, send user to assignment page
+        router.replace("/data");
       } catch (err) {
         console.error(err);
         router.replace("/");
