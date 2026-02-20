@@ -6,8 +6,6 @@ import { submitVote } from "@/app/actions/votes";
 type CaptionWithImage = {
   id: string;
   content: string | null;
-  like_count: number;
-  created_datetime_utc: string;
   imageUrl: string | null;
 };
 
@@ -24,8 +22,6 @@ export function CaptionCard({
 }) {
   const [userVote, setUserVote] = useState<UserVote>(initialUserVote);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const formattedDate = new Date(caption.created_datetime_utc).toLocaleDateString();
 
   async function handleVote(voteType: "upvote" | "downvote") {
     if (!isLoggedIn) {
@@ -74,14 +70,6 @@ export function CaptionCard({
         </p>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">{formattedDate}</span>
-            <div className="flex items-center gap-1 bg-purple-900/30 px-3 py-1 rounded-full">
-              <span className="text-purple-300">♥</span>
-              <span className="text-purple-300 font-semibold">{caption.like_count}</span>
-            </div>
-          </div>
-
           <div className="flex gap-2">
             <button
               onClick={() => handleVote("upvote")}

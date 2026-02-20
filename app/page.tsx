@@ -106,6 +106,12 @@ export default function Home() {
             >
               View Captions
             </Link>
+            <Link
+              href="/list"
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105"
+            >
+              /list
+            </Link>
             <a
               href="https://nextjs.org"
               target="_blank"

@@ -8,8 +8,6 @@ export const dynamic = "force-dynamic";
 type CaptionRow = {
   id: string;
   content: string | null;
-  like_count: number;
-  created_datetime_utc: string;
 };
 
 type ImageRow = { id: string; url: string | null };
@@ -29,8 +27,8 @@ export default async function DataPage() {
 
   const { data: captionsData, error: captionsError } = await supabase
     .from("captions")
-    .select("id, content, like_count, created_datetime_utc")
-    .order("like_count", { ascending: false })
+    .select("id, content")
+    .order("id", { ascending: false })
     .limit(50);
 
   if (captionsError) throw captionsError;
