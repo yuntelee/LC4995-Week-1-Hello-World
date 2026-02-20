@@ -1,5 +1,46 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Supabase + Auth + Caption Voting (Assignments #3/#4)
+
+### Environment variables
+
+Set these in `.env.local` (for local) and in Vercel Project Settings → Environment Variables (for deployment):
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+### OAuth redirect URI (required)
+
+The app uses an auth callback route at `/auth/callback`.
+
+- Local redirect URI: `http://localhost:3000/auth/callback`
+- Vercel redirect URI: `https://<your-vercel-domain>/auth/callback`
+
+Make sure your Google OAuth client and Supabase Auth settings allow redirecting to exactly `/auth/callback`.
+
+### Voting behavior
+
+The captions list is on `/data`.
+
+- Logged-in users can upvote/downvote captions.
+- Submitting a vote inserts a new row into the `caption_votes` table.
+- Logged-out users see the vote buttons disabled and cannot submit votes.
+
+Expected `caption_votes` columns used by the app:
+
+- `caption_id` (string/uuid)
+- `user_id` (string/uuid)
+- `vote_type` ("upvote" | "downvote")
+- `created_at` (timestamp)
+
+Note: This repo does not change any RLS policies. Configure RLS in Supabase separately (as required by your course).
+
+### Vercel deployment protection
+
+If you want to test logged-out behavior in an Incognito window, turn off Vercel “Deployment Protection” for the project.
+
 ## Getting Started
 
 First, run the development server:

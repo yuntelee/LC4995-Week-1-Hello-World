@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import { CaptionCard } from "@/app/components/CaptionCardClient";
 
 export const dynamic = "force-dynamic";
 
@@ -14,44 +15,16 @@ type ImageRow = { id: string; url: string | null };
 
 type CaptionWithImage = CaptionRow & { imageUrl: string | null };
 
-function CaptionCard({ caption }: { caption: CaptionWithImage }) {
-  const formattedDate = new Date(caption.created_datetime_utc).toLocaleDateString();
-
-  return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden hover:border-purple-500 transition shadow-lg">
-      {caption.imageUrl ? (
-        <div className="relative w-full h-48 bg-slate-900 overflow-hidden">
-          <img
-            src={caption.imageUrl}
-            alt={caption.content || "Caption image"}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : (
-        <div className="w-full h-48 bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
-          <span className="text-slate-500">No image</span>
-        </div>
-      )}
-
-      <div className="p-4">
-        <p className="text-white text-lg font-semibold mb-3 line-clamp-3">
-          {caption.content || "No caption"}
-        </p>
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-400">{formattedDate}</span>
-          <div className="flex items-center gap-1 bg-purple-900/30 px-3 py-1 rounded-full">
-            <span className="text-purple-300">♥</span>
-            <span className="text-purple-300 font-semibold">{caption.like_count}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default async function DataPage() {
   const supabase = await createClient();
+
+  // Check if user is logged in
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const isLoggedIn = !!session?.user;
+  const userId = session?.user?.id;
 
   const { data: captionsData, error: captionsError } = await supabase
     .from("captions")
@@ -71,6 +44,25 @@ export default async function DataPage() {
 
   if (imagesError) throw imagesError;
 
+  // Fetch user votes if logged in
+  const userVotesMap = new Map<string, "upvote" | "downvote">();
+  if (isLoggedIn && userId) {
+    const { data: votesData } = await supabase
+      .from("caption_votes")
+      .select("caption_id, vote_type")
+      .eq("user_id", userId)
+      .in("caption_id", captionIds);
+
+    (votesData ?? []).forEach((v) => {
+      if (
+        v?.caption_id &&
+        (v?.vote_type === "upvote" || v?.vote_type === "downvote")
+      ) {
+        userVotesMap.set(v.caption_id, v.vote_type);
+      }
+    });
+  }
+
   const images = (imagesData ?? []) as ImageRow[];
 
   const imageMap = new Map<string, string | null>(images.map((i) => [i.id, i.url]));
@@ -78,14 +70,6 @@ export default async function DataPage() {
     ...c,
     imageUrl: imageMap.get(c.id) ?? null,
   }));
-
-  console.log({
-    captions: captions.length,
-    imagesReturned: images.length,
-    matched: captionsWithImages.filter((c) => !!c.imageUrl).length,
-    firstCaptionId: captions[0]?.id,
-    firstImageUrl: captionsWithImages[0]?.imageUrl,
-  });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-8">
@@ -95,6 +79,7 @@ export default async function DataPage() {
             <h1 className="text-4xl font-bold text-white mb-2">Captions & Images</h1>
             <p className="text-slate-300">
               Showing {captionsWithImages.length} captions
+              {isLoggedIn && " • Logged in"}
             </p>
           </div>
           <Link href="/">
@@ -106,7 +91,12 @@ export default async function DataPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {captionsWithImages.map((caption) => (
-            <CaptionCard key={caption.id} caption={caption} />
+            <CaptionCard
+              key={caption.id}
+              caption={caption}
+              isLoggedIn={isLoggedIn}
+              userVote={userVotesMap.get(caption.id) ?? null}
+            />
           ))}
         </div>
       </div>
