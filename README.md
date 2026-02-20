@@ -1,77 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LC4995 Week 1 - Hello World + Supabase List
 
-## Supabase + Auth + Caption Voting (Assignments #3/#4)
+## Assignment 1 (Hello World + GitHub + Vercel)
 
-### Environment variables
-
-Set these in `.env.local` (for local) and in Vercel Project Settings → Environment Variables (for deployment):
+### 1) Create app and run locally
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-```
-
-### OAuth redirect URI (required)
-
-The app uses an auth callback route at `/auth/callback`.
-
-- Local redirect URI: `http://localhost:3000/auth/callback`
-- Vercel redirect URI: `https://<your-vercel-domain>/auth/callback`
-
-Make sure your Google OAuth client and Supabase Auth settings allow redirecting to exactly `/auth/callback`.
-
-### Voting behavior
-
-The captions list is on `/data`.
-
-- Logged-in users can upvote/downvote captions.
-- Submitting a vote inserts a new row into the `caption_votes` table.
-- Logged-out users see the vote buttons disabled and cannot submit votes.
-
-Expected `caption_votes` columns used by the app:
-
-- `caption_id` (string/uuid)
-- `user_id` (string/uuid)
-- `vote_type` ("upvote" | "downvote")
-- `created_at` (timestamp)
-
-Note: This repo does not change any RLS policies. Configure RLS in Supabase separately (as required by your course).
-
-### Vercel deployment protection
-
-If you want to test logged-out behavior in an Incognito window, turn off Vercel “Deployment Protection” for the project.
-
-## Getting Started
-
-First, run the development server:
-
-```bash
+npx create-next-app@latest . --typescript --eslint --app --use-npm --yes
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2) Git workflow
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+git add .
+git commit -m "Assignment 1: Hello World Next.js app"
+git push origin main
+```
 
-## Learn More
+### 3) Connect GitHub repo to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Go to `https://vercel.com/new`.
+2. Import Git repository `yuntelee/LC4995-Week-1-Hello-World`.
+3. Keep Framework Preset as **Next.js**.
+4. Click **Deploy**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4) Disable deployment protection on Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Open project in Vercel Dashboard.
+2. Go to **Settings** -> **Deployment Protection**.
+3. Disable protection for **Preview** and **Production** as required.
+4. Save settings.
 
-## Deploy on Vercel
+### 5) Get commit-specific deployment URL
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+git rev-parse --short HEAD
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then in Vercel:
+1. Go to **Deployments**.
+2. Open the deployment that matches that commit SHA.
+3. Copy that deployment URL.
+
+## Assignment 2 (Supabase /list route)
+
+### 1) Install Supabase client
+
+```bash
+npm install @supabase/supabase-js
+```
+
+### 2) Local environment config
+
+Create `.env.local` in project root:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://qihsgnfjqmkjmoowyfbn.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+Set `NEXT_PUBLIC_SUPABASE_ANON_KEY` to your Supabase project's anon key.
+
+### 3) Vercel environment variables
+
+In Vercel project -> **Settings** -> **Environment Variables**, add:
+
+- `NEXT_PUBLIC_SUPABASE_URL` = `https://qihsgnfjqmkjmoowyfbn.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your anon key
+
+Apply to **Production**, **Preview**, and **Development**, then redeploy.
+
+### 4) Deploy and redeploy flow
+
+```bash
+git add .
+git commit -m "Assignment 2: Add Supabase list route"
+git push origin main
+```
+
+After push, Vercel auto-deploys. To force a fresh deploy from dashboard, open **Deployments** and click **Redeploy**.
+
+### 5) Verify
+
+- Home page: `/`
+- Supabase list page: `/list`
+
+`/list` fetches rows from table `data` using a Server Component.
