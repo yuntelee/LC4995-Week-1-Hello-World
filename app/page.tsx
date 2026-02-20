@@ -26,14 +26,8 @@ export default async function Home() {
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         {isLoggedIn ? <SignOutButton /> : <SignInButton />}
-        <Link href="/gated" className="rounded-md border border-foreground/30 px-4 py-2">
-          Open Protected Route
-        </Link>
         <Link href="/data" className="rounded-md border border-foreground/30 px-4 py-2">
           Open Voting Page
-        </Link>
-        <Link href="/list" className="rounded-md border border-foreground/30 px-4 py-2">
-          Open Caption List
         </Link>
       </div>
     </main>
