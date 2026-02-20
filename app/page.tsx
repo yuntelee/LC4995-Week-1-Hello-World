@@ -1,18 +1,7 @@
 import SignInButton from "@/app/components/SignInButton";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
-export default async function Home() {
-  const supabase = await createClient();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (session?.user) {
-    redirect("/data");
-  }
-
+export default function Home() {
   const characters = "HELLO WORLD".split("");
 
   return (
@@ -111,12 +100,12 @@ export default async function Home() {
 
           <div className="mt-12 flex gap-4 justify-center">
             <SignInButton />
-            <a
-              href="/gated"
+            <Link
+              href="/data"
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105"
             >
-              Gated Page
-            </a>
+              View Captions
+            </Link>
             <a
               href="https://nextjs.org"
               target="_blank"
@@ -124,14 +113,6 @@ export default async function Home() {
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105"
             >
               Learn Next.js
-            </a>
-            <a
-              href="https://vercel.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-3 border-2 border-purple-600 text-purple-400 font-semibold rounded-lg transition-all duration-300 hover:bg-purple-600/10 hover:scale-105"
-            >
-              Deploy Now
             </a>
           </div>
         </div>
