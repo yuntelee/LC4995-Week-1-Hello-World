@@ -2,13 +2,19 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type TableRow = {
-  id: string | number;
-  [key: string]: unknown;
+type CaptionRow = {
+  id: string;
+  content: string | null;
+  like_count: number;
+  is_public: boolean;
+  created_datetime_utc: string;
+  images: Array<{
+    url: string | null;
+  }>;
 };
 
 type RowsResult = {
-  rows: TableRow[];
+  rows: CaptionRow[];
   error: string | null;
 };
 
@@ -24,9 +30,11 @@ async function getRows(): Promise<RowsResult> {
   }
 
   const { data, error } = await supabase
-    .from("data")
-    .select("*")
-    .order("id", { ascending: true });
+    .from("captions")
+    .select("id, content, like_count, is_public, created_datetime_utc, images(url)")
+    .eq("is_public", true)
+    .order("like_count", { ascending: false })
+    .limit(50);
 
   if (error) {
     return {
@@ -36,7 +44,7 @@ async function getRows(): Promise<RowsResult> {
   }
 
   return {
-    rows: (data ?? []) as TableRow[],
+    rows: (data ?? []) as CaptionRow[],
     error: null,
   };
 }
@@ -46,16 +54,41 @@ export default async function ListPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl p-8">
-      <h1 className="mb-6 text-3xl font-semibold">Supabase Table Rows</h1>
+      <h1 className="mb-2 text-3xl font-semibold">Public Captions</h1>
+      <p className="mb-6 text-sm text-foreground/70">Table: captions (joined with images)</p>
 
       {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
 
       {rows.length === 0 ? (
-        <p className="text-foreground/80">No rows found in table: data</p>
+        <p className="text-foreground/80">No rows found in table: captions</p>
       ) : (
-        <pre className="overflow-auto rounded-lg border border-black/10 p-4 text-sm dark:border-white/20">
-          {JSON.stringify(rows, null, 2)}
-        </pre>
+        <ul className="space-y-4">
+          {rows.map((row) => (
+            (() => {
+              const imageUrl = row.images?.[0]?.url ?? null;
+
+              return (
+            <li
+              key={row.id}
+              className="rounded-lg border border-black/10 p-4 dark:border-white/20"
+            >
+              <div className="mb-2 text-xs text-foreground/60">{row.id}</div>
+              <p className="mb-3 text-base">{row.content ?? "(no caption content)"}</p>
+              <div className="mb-3 text-sm text-foreground/70">
+                Likes: {row.like_count} · {new Date(row.created_datetime_utc).toLocaleString()}
+              </div>
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={row.content ?? "caption image"}
+                  className="h-48 w-full rounded-md object-cover"
+                />
+              ) : null}
+            </li>
+              );
+            })()
+          ))}
+        </ul>
       )}
     </main>
   );
