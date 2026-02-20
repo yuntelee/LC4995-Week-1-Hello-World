@@ -8,9 +8,7 @@ type CaptionRow = {
   like_count: number;
   is_public: boolean;
   created_datetime_utc: string;
-  images: Array<{
-    url: string | null;
-  }>;
+  image: { url: string | null } | Array<{ url: string | null }> | null;
 };
 
 type RowsResult = {
@@ -31,7 +29,9 @@ async function getRows(): Promise<RowsResult> {
 
   const { data, error } = await supabase
     .from("captions")
-    .select("id, content, like_count, is_public, created_datetime_utc, images(url)")
+    .select(
+      "id, content, like_count, is_public, created_datetime_utc, image:images!captions_image_id_fkey(url)"
+    )
     .eq("is_public", true)
     .order("like_count", { ascending: false })
     .limit(50);
@@ -49,6 +49,18 @@ async function getRows(): Promise<RowsResult> {
   };
 }
 
+function getImageUrl(row: CaptionRow): string | null {
+  if (!row.image) {
+    return null;
+  }
+
+  if (Array.isArray(row.image)) {
+    return row.image[0]?.url ?? null;
+  }
+
+  return row.image.url;
+}
+
 export default async function ListPage() {
   const { rows, error } = await getRows();
 
@@ -63,11 +75,10 @@ export default async function ListPage() {
         <p className="text-foreground/80">No rows found in table: captions</p>
       ) : (
         <ul className="space-y-4">
-          {rows.map((row) => (
-            (() => {
-              const imageUrl = row.images?.[0]?.url ?? null;
+          {rows.map((row) => {
+            const imageUrl = getImageUrl(row);
 
-              return (
+            return (
             <li
               key={row.id}
               className="rounded-lg border border-black/10 p-4 dark:border-white/20"
@@ -85,9 +96,8 @@ export default async function ListPage() {
                 />
               ) : null}
             </li>
-              );
-            })()
-          ))}
+            );
+          })}
         </ul>
       )}
     </main>
