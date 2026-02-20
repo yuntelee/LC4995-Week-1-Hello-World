@@ -33,8 +33,12 @@ export function CaptionCardClient({
     const result = await submitVote({ captionId, voteType });
 
     if (result.success) {
-      setVote(voteType);
-      setMessage("Vote saved.");
+      const nextVote =
+        result.currentVote === "upvote" || result.currentVote === "downvote"
+          ? result.currentVote
+          : null;
+      setVote(nextVote);
+      setMessage(result.message ?? "Vote saved.");
     } else {
       setMessage(result.error ?? "Could not save vote.");
     }
@@ -67,17 +71,16 @@ export function CaptionCardClient({
         </button>
         <button
           onClick={() => handleVote("downvote")}
-          disabled
+          disabled={!isLoggedIn || isSubmitting}
           className={`rounded-md px-3 py-2 text-sm ${
             vote === "downvote" ? "bg-red-600 text-white" : "border border-foreground/30"
           } disabled:opacity-50`}
         >
-          Downvote (N/A)
+          Downvote
         </button>
       </div>
 
       {!isLoggedIn ? <p className="text-xs text-foreground/70">Sign in to vote.</p> : null}
-      <p className="text-xs text-foreground/70">Current schema supports upvotes in caption_likes only.</p>
       {message ? <p className="text-xs text-foreground/70">{message}</p> : null}
       <p className="mt-2 text-xs text-foreground/60">Caption ID: {captionId}</p>
     </li>

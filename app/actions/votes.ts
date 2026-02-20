@@ -20,11 +20,17 @@ export async function submitVote({
     }
 
     if (voteType === "downvote") {
-      return {
-        success: false,
-        error:
-          "Downvote is not supported by the current schema. Only upvote is available in caption_likes.",
-      };
+      const { error } = await supabase
+        .from("caption_likes")
+        .delete()
+        .eq("caption_id", captionId)
+        .eq("profile_id", user.id);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, currentVote: null, message: "Downvote applied." };
     }
 
     const { error } = await supabase.from("caption_likes").insert({
@@ -34,13 +40,17 @@ export async function submitVote({
 
     if (error) {
       if (error.code === "23505") {
-        return { success: false, error: "You already voted on this caption." };
+        return {
+          success: true,
+          currentVote: "upvote",
+          message: "You already upvoted this caption.",
+        };
       }
 
       return { success: false, error: error.message };
     }
 
-    return { success: true };
+    return { success: true, currentVote: "upvote", message: "Upvote saved." };
   } catch (error) {
     return {
       success: false,
