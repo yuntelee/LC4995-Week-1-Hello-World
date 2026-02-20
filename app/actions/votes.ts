@@ -19,10 +19,17 @@ export async function submitVote({
       return { success: false, error: "You must be logged in to vote." };
     }
 
-    const { error } = await supabase.from("caption_votes").insert({
+    if (voteType === "downvote") {
+      return {
+        success: false,
+        error:
+          "Downvote is not supported by the current schema. Only upvote is available in caption_likes.",
+      };
+    }
+
+    const { error } = await supabase.from("caption_likes").insert({
       caption_id: captionId,
       profile_id: user.id,
-      vote_type: voteType,
     });
 
     if (error) {

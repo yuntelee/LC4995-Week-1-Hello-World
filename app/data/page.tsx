@@ -12,7 +12,6 @@ type CaptionRow = {
 
 type VoteRow = {
   caption_id: string;
-  vote_type: "upvote" | "downvote";
 };
 
 function getImageUrl(row: CaptionRow): string | null {
@@ -53,13 +52,13 @@ export default async function DataPage() {
 
   if (isLoggedIn && captionIds.length > 0) {
     const { data: votesData } = await supabase
-      .from("caption_votes")
-      .select("caption_id, vote_type")
+      .from("caption_likes")
+      .select("caption_id")
       .eq("profile_id", user.id)
       .in("caption_id", captionIds);
 
     ((votesData ?? []) as VoteRow[]).forEach((vote) => {
-      voteMap.set(vote.caption_id, vote.vote_type);
+      voteMap.set(vote.caption_id, "upvote");
     });
   }
 
