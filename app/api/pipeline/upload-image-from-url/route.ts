@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
   const { token, response } = await getAccessToken();
   if (!token) {
-    return response;
+    return response ?? badRequest("Unauthorized request.");
   }
 
   const pipelineResponse = await postToPipeline(
