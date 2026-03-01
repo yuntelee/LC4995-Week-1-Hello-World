@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { CaptionCardClient } from "@/app/components/CaptionCardClient";
+import { CaptionPipelineClient } from "@/app/components/CaptionPipelineClient";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,8 @@ export default async function DataPage() {
           ? "You are logged in. You can submit one vote per caption."
           : "You are not logged in. Voting is disabled."}
       </p>
+
+      <CaptionPipelineClient isLoggedIn={isLoggedIn} />
 
       <ul className="space-y-4">
         {captions.map((caption) => (

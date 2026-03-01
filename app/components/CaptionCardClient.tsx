@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { submitVote } from "@/app/actions/votes";
 
 type CaptionCardProps = {
@@ -49,9 +50,12 @@ export function CaptionCardClient({
   return (
     <li className="rounded-lg border border-black/10 p-4 dark:border-white/20">
       {imageUrl ? (
-        <img
+        <Image
           src={imageUrl}
           alt={content ?? "caption image"}
+          width={1200}
+          height={480}
+          unoptimized
           className="mb-3 h-48 w-full rounded-md object-cover"
         />
       ) : null}

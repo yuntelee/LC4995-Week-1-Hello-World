@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -89,9 +90,12 @@ export default async function ListPage() {
                 Likes: {row.like_count} · {new Date(row.created_datetime_utc).toLocaleString()}
               </div>
               {imageUrl ? (
-                <img
+                <Image
                   src={imageUrl}
                   alt={row.content ?? "caption image"}
+                  width={1200}
+                  height={480}
+                  unoptimized
                   className="h-48 w-full rounded-md object-cover"
                 />
               ) : null}
